@@ -45,6 +45,7 @@ As migrações não rodam sozinhas. A subida de cada ambiente, tanto de desenvol
 
 - Docker Engine ou Docker Desktop em versão recente, com Compose v2 e Buildx
 - Buildx com builder capaz de build multi-plataforma (driver `docker-container` ou equivalente)
+- Em Docker Engine no Linux, emulação QEMU/binfmt instalada para o build arm64 (ex: `docker run --privileged --rm tonistiigi/binfmt --install arm64`); o Docker Desktop já traz a emulação embutida
 - Docker Scout (CLI ou via Docker Desktop)
 - Conta no Docker Hub com repositório público
 
@@ -85,7 +86,7 @@ Estágio `production`:
 
 - Serviços `app` (build do estágio `dev`) e `db` (PostgreSQL com versão fixada), conectados por uma network nomeada declarada no arquivo
 - `db` com healthcheck e `app` dependendo dele com `condition: service_healthy`
-- Variáveis de ambiente carregadas de um arquivo `.env` (via `env_file` ou interpolação). O `.env.example` deve estar versionado com valores funcionais para subida local, e o `.env` deve estar no `.gitignore`
+- Variáveis de ambiente carregadas de um arquivo `.env` (via `env_file` ou interpolação). O `.env.example` deve estar versionado com valores funcionais para a subida via compose, e o `.env` deve estar no `.gitignore`
 - Dados do PostgreSQL em volume nomeado
 - `develop.watch` configurado com, no mínimo: ação `sync` para mudanças em `src/` e ação `rebuild` para mudanças no `package.json`
 - Serviço `adminer` disponível em `http://localhost:8081`, ativado somente pelo profile `tools`
@@ -98,22 +99,22 @@ Estágio `production`:
 - Manifest list contendo as plataformas `linux/amd64` e `linux/arm64`
 - Build com `--sbom=true` e `--provenance=true`, com as attestations publicadas junto da imagem
 - Publicada em repositório público no Docker Hub com uma tag semver (ex: `1.0.0`) e a tag `latest`, ambas apontando para o mesmo digest
-- Tamanho da imagem, reportado por `docker image ls` após `docker pull --platform linux/amd64`, menor ou igual a XX MB
+- Tamanho da imagem, reportado por `docker image ls` após `docker pull --platform linux/amd64`, menor ou igual a 350 MB
 
 ### 4. Análise de vulnerabilidades (Docker Scout)
 
 - Executar `docker scout cves` contra a imagem publicada e salvar a saída completa em `reports/scout-cves.txt`
-- A imagem não pode conter nenhuma CVE de severidade CRITICAL
-- CVEs de severidade HIGH remanescentes, se existirem, devem ser listadas no README com justificativa ou plano de mitigação
+- A imagem não pode conter nenhuma CVE de severidade CRITICAL com correção disponível (verificável com `docker scout cves --only-severity critical --only-fixed`)
+- CVEs de severidade HIGH, e CRITICAL sem correção disponível, se existirem, devem ser listadas no README com justificativa ou plano de mitigação
 
 ### 5. Ambiente de produção (compose.prod.yaml)
 
 - Serviço `app` sem instrução `build`: usa a imagem publicada no Docker Hub, referenciada pela tag semver
-- Todos os serviços com restart policy (`always` ou `unless-stopped`) e limites explícitos de CPU e memória
+- Serviços `app` e `db` com restart policy (`always` ou `unless-stopped`) e limites explícitos de CPU e memória (serviços de execução única, como um eventual serviço de migração, ficam fora desta regra)
 - Nenhum bind mount de código-fonte; dados do PostgreSQL em volume nomeado
-- Mesmo esquema de variáveis de ambiente (`.env.example` → `.env`)
+- Mesmo esquema de variáveis de ambiente (`.env.example` → `.env`). Em produção real esses valores viriam de um gerenciador de segredos; aqui o `.env` existe para permitir a subida local pelo avaliador
 - Migrações aplicadas automaticamente na subida do ambiente
-- Healthchecks ativos: `docker compose -f compose.prod.yaml ps` deve exibir os serviços como `healthy`
+- Healthchecks ativos: `docker compose -f compose.prod.yaml ps` deve exibir `app` e `db` como `healthy`
 - Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose -f compose.prod.yaml up -d` deve deixar a API respondendo em `http://localhost:3000`, com `GET /flags` retornando 200
 
 ### 6. README
@@ -125,7 +126,7 @@ Substitua o conteúdo do `README.md` do repositório base pela documentação da
 - Decisões técnicas: justificativa da imagem base de produção com comparação a pelo menos 1 alternativa considerada, e explicação da estratégia de cache de build adotada
 - Como rodar (desenvolvimento): passo a passo, incluindo o uso do watch e do profile `tools`
 - Como rodar (produção): passo a passo
-- Segurança e supply chain: comandos para verificar usuário não-root, labels, SBOM e provenance; resumo do relatório do Scout e justificativa das CVEs HIGH remanescentes, se houver
+- Segurança e supply chain: comandos para verificar usuário não-root, labels, SBOM e provenance; resumo do relatório do Scout e justificativa das CVEs remanescentes (HIGH, e CRITICAL sem correção disponível), se houver
 - Validação: mapeamento de cada critério de aceite ao comando que o avaliador executa para verificá-lo
 
 ## Critérios de Aceite
@@ -154,7 +155,7 @@ Imagem de produção e Docker Hub
 ☐ `docker buildx imagetools inspect` da imagem lista `linux/amd64` e `linux/arm64`
 ☐ `docker buildx imagetools inspect` exibe as attestations de SBOM e provenance
 ☐ A tag semver e a tag `latest` apontam para o mesmo digest
-☐ Após `docker pull --platform linux/amd64`, `docker image ls` reporta tamanho menor ou igual a XX MB
+☐ Após `docker pull --platform linux/amd64`, `docker image ls` reporta tamanho menor ou igual a 350 MB
 ☐ `docker image inspect` mostra `User` não-root, `HEALTHCHECK` configurado e as 4 labels OCI exigidas
 ☐ Com um banco acessível (ex: no ambiente de produção), o container fica `healthy` pelo `HEALTHCHECK` da própria imagem
 ☐ `docker stop` encerra o container em menos de 10 segundos, sem esperar o timeout do SIGKILL
@@ -162,15 +163,15 @@ Imagem de produção e Docker Hub
 Docker Scout
 
 ☐ `reports/scout-cves.txt` contém a saída completa do `docker scout cves` da imagem publicada
-☐ Zero CVEs de severidade CRITICAL
-☐ CVEs HIGH, se existirem, estão listadas e justificadas no README
+☐ Zero CVEs de severidade CRITICAL com correção disponível (`docker scout cves --only-severity critical --only-fixed`)
+☐ CVEs HIGH, e CRITICAL sem correção disponível, se existirem, estão listadas e justificadas no README
 
 Ambiente de produção
 
 ☐ `compose.prod.yaml` não contém instrução `build` e referencia a imagem do Docker Hub pela tag semver
-☐ Todos os serviços têm restart policy e limites de CPU e memória
+☐ Os serviços `app` e `db` têm restart policy e limites de CPU e memória
 ☐ Não há bind mount de código-fonte e os dados do PostgreSQL estão em volume nomeado
-☐ `cp .env.example .env && docker compose -f compose.prod.yaml up -d` deixa a API em `http://localhost:3000`, `GET /flags` retorna 200 e `ps` exibe os serviços como `healthy`
+☐ `cp .env.example .env && docker compose -f compose.prod.yaml up -d` deixa a API em `http://localhost:3000`, `GET /flags` retorna 200 e `ps` exibe `app` e `db` como `healthy`
 
 README
 
@@ -228,7 +229,7 @@ https://github.com/devfullcycle/REPO-A-DEFINIR
 
 **6.** Crie o builder multi-plataforma no Buildx e faça o build com SBOM e provenance, publicando as duas tags no Docker Hub.
 
-**7.** Rode o Scout contra a imagem publicada. Se houver CVE CRITICAL, ajuste a imagem base e republique. Salve o relatório em `reports/`.
+**7.** Rode o Scout contra a imagem publicada. Se houver CVE CRITICAL com correção disponível, ajuste a imagem base e republique. Salve o relatório em `reports/`.
 
 **8.** Monte o `compose.prod.yaml` consumindo a imagem publicada, incluindo a aplicação automática das migrações.
 
@@ -242,7 +243,9 @@ A ordem das instruções no Dockerfile determina o aproveitamento de cache. Copi
 
 O tamanho da imagem final é consequência das suas decisões (imagem base, multi-stage, apenas dependências de produção), não de um ajuste cosmético no fim. Se a imagem estourou o limite, revisite as decisões.
 
-Se o Scout apontar CVEs CRITICAL, o caminho quase sempre é atualizar ou trocar a imagem base, não conviver com elas.
+O `HEALTHCHECK` executa dentro da imagem final: bases enxutas nem sempre trazem `curl` ou `wget`, mas o próprio `node` (com o `fetch` global) resolve.
+
+Se o Scout apontar CVEs CRITICAL com correção disponível, o caminho quase sempre é atualizar ou trocar a imagem base, não conviver com elas.
 
 `docker buildx imagetools inspect` é a ferramenta para conferir plataformas, digests e attestations de uma imagem publicada sem precisar puxá-la.
 
