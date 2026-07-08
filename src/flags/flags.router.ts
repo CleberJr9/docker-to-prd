@@ -6,13 +6,10 @@ import { validateFlagCreate, validateFlagUpdate } from './flags.validation';
 
 export const flagsRouter = Router();
 
-// O identificador público de uma flag é a `key` (kebab-case). Uma key mal
-// formada simplesmente não é encontrada, resultando em 404.
 function keyParam(raw: unknown): string {
   return typeof raw === 'string' ? raw : '';
 }
 
-// GET /flags — lista ordenada por key.
 flagsRouter.get(
   '/',
   asyncHandler(async (_req, res) => {
@@ -21,7 +18,6 @@ flagsRouter.get(
   }),
 );
 
-// GET /flags/:key — busca uma flag pela key.
 flagsRouter.get(
   '/:key',
   asyncHandler(async (req, res) => {
@@ -33,7 +29,6 @@ flagsRouter.get(
   }),
 );
 
-// POST /flags — cria uma flag.
 flagsRouter.post(
   '/',
   asyncHandler(async (req, res) => {
@@ -43,7 +38,6 @@ flagsRouter.post(
   }),
 );
 
-// PUT /flags/:key — atualiza description e enabled (a key é imutável).
 flagsRouter.put(
   '/:key',
   asyncHandler(async (req, res) => {
@@ -56,7 +50,6 @@ flagsRouter.put(
   }),
 );
 
-// DELETE /flags/:key — remove uma flag pela key.
 flagsRouter.delete(
   '/:key',
   asyncHandler(async (req, res) => {

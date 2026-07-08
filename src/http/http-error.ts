@@ -1,5 +1,3 @@
-// Erro portador de status HTTP. Handlers lançam instâncias desta classe e o
-// error handler central as traduz em respostas JSON.
 export class HttpError extends Error {
   constructor(
     public readonly status: number,

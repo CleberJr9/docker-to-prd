@@ -3,8 +3,6 @@ import { errorHandler } from './http/error-handler';
 import { healthRouter } from './health/health.router';
 import { flagsRouter } from './flags/flags.router';
 
-// Monta a instância do Express. Exportada separadamente do bootstrap para
-// manter a configuração de rotas isolada do ciclo de vida do processo.
 export function createApp(): Express {
   const app = express();
 
@@ -13,12 +11,10 @@ export function createApp(): Express {
   app.use('/health', healthRouter);
   app.use('/flags', flagsRouter);
 
-  // 404 para rotas não mapeadas.
   app.use((_req, res) => {
     res.status(404).json({ error: 'Rota não encontrada' });
   });
 
-  // Error handler central (deve ser o último middleware).
   app.use(errorHandler);
 
   return app;

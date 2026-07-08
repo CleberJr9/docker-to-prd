@@ -2,19 +2,6 @@ import { Pool } from 'pg';
 import { env } from '../config/env';
 import { migrations } from './migrations';
 
-// Runner de migrações próprio, sem dependência externa.
-//
-// - Cria a tabela `schema_migrations` (registro do que já foi aplicado).
-// - Aplica, em ordem, apenas as migrações ainda não registradas.
-// - É idempotente: rodar duas vezes seguidas não aplica nada na segunda vez.
-// - Uma transação por migração (Postgres tem DDL transacional, então a criação
-//   da tabela e o registro em schema_migrations são atômicos).
-// - Não faz retry: se o banco estiver inacessível, falha com mensagem clara
-//   e exit code 1. Orquestrar a ordem de subida é responsabilidade de quem
-//   monta o ambiente.
-//
-// Usa um pool dedicado para não interferir no pool da aplicação.
-
 async function ensureMigrationsTable(pool: Pool): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (

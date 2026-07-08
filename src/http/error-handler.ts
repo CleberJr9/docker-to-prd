@@ -5,7 +5,6 @@ interface PgError {
   code?: string;
 }
 
-// 23505 = unique_violation no PostgreSQL.
 function isUniqueViolation(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as PgError).code === '23505';
 }
@@ -18,7 +17,6 @@ function isBodyParseError(err: unknown): boolean {
   );
 }
 
-// Error handler central: converte erros em respostas JSON consistentes.
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof HttpError) {
     res.status(err.status).json({

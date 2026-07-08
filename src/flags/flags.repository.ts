@@ -1,7 +1,5 @@
 import { pool } from '../db/pool';
 
-// Usar `type` (e não `interface`) para que a linha seja atribuível ao
-// QueryResultRow do pg (index signature implícita).
 export type Flag = {
   id: number;
   key: string;

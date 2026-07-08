@@ -4,16 +4,12 @@ import { pool } from './db/pool';
 
 const app = createApp();
 
-// Escuta em 0.0.0.0 para responder também de dentro de um container.
 const server = app.listen(env.port, '0.0.0.0', () => {
   console.log(`Servidor ouvindo em http://0.0.0.0:${env.port}`);
 });
 
 let shuttingDown = false;
 
-// Encerramento gracioso: para de aceitar novas conexões, fecha o servidor HTTP
-// e o pool do PostgreSQL, e sai com código 0 em bem menos de 10 segundos. Relevante
-// porque o processo Node roda como PID 1 dentro do container.
 async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) {
     return;
@@ -21,7 +17,6 @@ async function shutdown(signal: string): Promise<void> {
   shuttingDown = true;
   console.log(`Recebido ${signal}. Encerrando graciosamente...`);
 
-  // Rede de segurança: se algo travar, força a saída bem antes do SIGKILL.
   const forceExit = setTimeout(() => {
     console.error('Encerramento forçado após timeout.');
     process.exit(1);

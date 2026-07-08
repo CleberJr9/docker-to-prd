@@ -1,5 +1,3 @@
-// Carrega variáveis de um arquivo .env quando presente. Se o arquivo não
-// existir, dotenv apenas segue em frente sem lançar erro.
 import 'dotenv/config';
 
 function parseNumber(value: string | undefined, fallback: number): number {
