@@ -1,7 +1,7 @@
 import express, { type Express } from 'express';
 import { errorHandler } from './http/error-handler';
 import { healthRouter } from './health/health.router';
-import { peopleRouter } from './people/people.router';
+import { flagsRouter } from './flags/flags.router';
 
 // Monta a instância do Express. Exportada separadamente do bootstrap para
 // manter a configuração de rotas isolada do ciclo de vida do processo.
@@ -11,7 +11,7 @@ export function createApp(): Express {
   app.use(express.json());
 
   app.use('/health', healthRouter);
-  app.use('/people', peopleRouter);
+  app.use('/flags', flagsRouter);
 
   // 404 para rotas não mapeadas.
   app.use((_req, res) => {

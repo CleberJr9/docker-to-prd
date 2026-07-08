@@ -1,10 +1,13 @@
+Projeto: Full Cycle 4.0 — Docker e Containers
+Fase do projeto: Do Dev à Produção: Containerizando uma API Node.js
+
 # Do Dev à Produção: Containerizando uma API Node.js
 
 ## Descrição
 
 Neste desafio você vai pegar uma aplicação Node.js + TypeScript funcional, porém sem nenhuma infraestrutura de containers, e entregar a containerização completa dela em dois ambientes: desenvolvimento e produção.
 
-Cenário: você entrou em um time que mantém uma API REST em produção, mas todo o fluxo de trabalho roda direto na máquina de cada desenvolvedor. Sua missão é construir do zero toda a camada de containers: um ambiente de desenvolvimento produtivo, com reload automático e ferramentas de apoio, e uma imagem de produção enxuta, segura e publicada no Docker Hub com metadados de supply chain, pronta para rodar via Docker Compose de produção.
+Cenário: você entrou em um time que mantém uma API de feature flags em produção, mas todo o fluxo de trabalho roda direto na máquina de cada desenvolvedor. Sua missão é construir do zero toda a camada de containers: um ambiente de desenvolvimento produtivo, com reload automático e ferramentas de apoio, e uma imagem de produção enxuta, segura e publicada no Docker Hub com metadados de supply chain, pronta para rodar via Docker Compose de produção.
 
 Os dois ambientes têm objetivos diferentes e isso deve se refletir nas suas decisões. O ambiente de desenvolvimento prioriza produtividade: feedback rápido, dependências completas, dados descartáveis. O ambiente de produção prioriza o mínimo: imagem pequena, superfície de ataque reduzida, rastreabilidade do que foi construído.
 
@@ -26,7 +29,7 @@ Entregar, em um repositório público no GitHub (fork do repositório base), o s
 
 ### A aplicação existente
 
-O repositório base contém uma API REST em Node.js + TypeScript com persistência em MySQL. Características relevantes para o desafio:
+O repositório base contém uma API REST de feature flags em Node.js + TypeScript com persistência em PostgreSQL. Ela expõe um CRUD de flags em `/flags`, identificadas por uma chave única. Características relevantes para o desafio:
 
 - Porta configurável via variável de ambiente `PORT` (padrão 3000)
 - Conexão com o banco configurável via variáveis de ambiente (host, porta, usuário, senha e nome do database)
@@ -80,12 +83,12 @@ Estágio `production`:
 
 ### 2. Ambiente de desenvolvimento (compose.yaml)
 
-- Serviços `app` (build do estágio `dev`) e `db` (MySQL com versão fixada), conectados por uma network nomeada declarada no arquivo
+- Serviços `app` (build do estágio `dev`) e `db` (PostgreSQL com versão fixada), conectados por uma network nomeada declarada no arquivo
 - `db` com healthcheck e `app` dependendo dele com `condition: service_healthy`
 - Variáveis de ambiente carregadas de um arquivo `.env` (via `env_file` ou interpolação). O `.env.example` deve estar versionado com valores funcionais para subida local, e o `.env` deve estar no `.gitignore`
-- Dados do MySQL em volume nomeado
+- Dados do PostgreSQL em volume nomeado
 - `develop.watch` configurado com, no mínimo: ação `sync` para mudanças em `src/` e ação `rebuild` para mudanças no `package.json`
-- Serviço `adminer` (ou phpMyAdmin) disponível em `http://localhost:8081`, ativado somente pelo profile `tools`
+- Serviço `adminer` disponível em `http://localhost:8081`, ativado somente pelo profile `tools`
 - Migrações aplicadas automaticamente na subida do ambiente
 - Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose up` deve deixar a API respondendo em `http://localhost:3000`, sem nenhum passo manual adicional
 
@@ -107,7 +110,7 @@ Estágio `production`:
 
 - Serviço `app` sem instrução `build`: usa a imagem publicada no Docker Hub, referenciada pela tag semver
 - Todos os serviços com restart policy (`always` ou `unless-stopped`) e limites explícitos de CPU e memória
-- Nenhum bind mount de código-fonte; dados do MySQL em volume nomeado
+- Nenhum bind mount de código-fonte; dados do PostgreSQL em volume nomeado
 - Mesmo esquema de variáveis de ambiente (`.env.example` → `.env`)
 - Healthchecks ativos: `docker compose -f compose.prod.yaml ps` deve exibir os serviços como `healthy`
 - Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose -f compose.prod.yaml up -d` deve deixar a API respondendo em `http://localhost:3000`
@@ -165,7 +168,7 @@ Ambiente de produção
 
 ☐ `compose.prod.yaml` não contém instrução `build` e referencia a imagem do Docker Hub pela tag semver
 ☐ Todos os serviços têm restart policy e limites de CPU e memória
-☐ Não há bind mount de código-fonte e os dados do MySQL estão em volume nomeado
+☐ Não há bind mount de código-fonte e os dados do PostgreSQL estão em volume nomeado
 ☐ `cp .env.example .env && docker compose -f compose.prod.yaml up -d` deixa a API em `http://localhost:3000` e `ps` exibe os serviços como `healthy`
 
 README

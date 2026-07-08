@@ -12,7 +12,7 @@ const server = app.listen(env.port, '0.0.0.0', () => {
 let shuttingDown = false;
 
 // Encerramento gracioso: para de aceitar novas conexões, fecha o servidor HTTP
-// e o pool do MySQL, e sai com código 0 em bem menos de 10 segundos. Relevante
+// e o pool do PostgreSQL, e sai com código 0 em bem menos de 10 segundos. Relevante
 // porque o processo Node roda como PID 1 dentro do container.
 async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) {
@@ -35,7 +35,7 @@ async function shutdown(signal: string): Promise<void> {
     try {
       await pool.end();
     } catch (poolErr) {
-      console.error('Erro ao fechar o pool do MySQL:', poolErr);
+      console.error('Erro ao fechar o pool do PostgreSQL:', poolErr);
     }
     console.log('Encerramento concluído.');
     process.exit(0);

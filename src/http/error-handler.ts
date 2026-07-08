@@ -1,12 +1,13 @@
 import type { ErrorRequestHandler } from 'express';
 import { HttpError } from './http-error';
 
-interface MysqlError {
+interface PgError {
   code?: string;
 }
 
-function isDuplicateEntry(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as MysqlError).code === 'ER_DUP_ENTRY';
+// 23505 = unique_violation no PostgreSQL.
+function isUniqueViolation(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as PgError).code === '23505';
 }
 
 function isBodyParseError(err: unknown): boolean {
@@ -32,8 +33,8 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  if (isDuplicateEntry(err)) {
-    res.status(409).json({ error: 'E-mail já cadastrado' });
+  if (isUniqueViolation(err)) {
+    res.status(409).json({ error: 'key já cadastrada' });
     return;
   }
 

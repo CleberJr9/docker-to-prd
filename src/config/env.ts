@@ -14,9 +14,9 @@ export const env = {
   port: parseNumber(process.env.PORT, 3000),
   db: {
     host: process.env.DB_HOST ?? 'localhost',
-    port: parseNumber(process.env.DB_PORT, 3306),
-    user: process.env.DB_USER ?? 'root',
+    port: parseNumber(process.env.DB_PORT, 5432),
+    user: process.env.DB_USER ?? 'postgres',
     password: process.env.DB_PASSWORD ?? '',
-    database: process.env.DB_NAME ?? 'people',
+    database: process.env.DB_NAME ?? 'flags',
   },
 } as const;

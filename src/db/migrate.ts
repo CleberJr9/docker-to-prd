@@ -1,4 +1,4 @@
-import mysql from 'mysql2/promise';
+import { Pool } from 'pg';
 import { env } from '../config/env';
 import { migrations } from './migrations';
 
@@ -7,40 +7,37 @@ import { migrations } from './migrations';
 // - Cria a tabela `schema_migrations` (registro do que já foi aplicado).
 // - Aplica, em ordem, apenas as migrações ainda não registradas.
 // - É idempotente: rodar duas vezes seguidas não aplica nada na segunda vez.
+// - Uma transação por migração (Postgres tem DDL transacional, então a criação
+//   da tabela e o registro em schema_migrations são atômicos).
 // - Não faz retry: se o banco estiver inacessível, falha com mensagem clara
 //   e exit code 1. Orquestrar a ordem de subida é responsabilidade de quem
 //   monta o ambiente.
 //
-// Usa um pool dedicado (com multipleStatements habilitado) para não impor esse
-// comportamento ao pool da aplicação.
+// Usa um pool dedicado para não interferir no pool da aplicação.
 
-async function ensureMigrationsTable(pool: mysql.Pool): Promise<void> {
+async function ensureMigrationsTable(pool: Pool): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
-      id VARCHAR(255) PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
 }
 
-async function getAppliedIds(pool: mysql.Pool): Promise<Set<string>> {
-  const [rows] = await pool.query('SELECT id FROM schema_migrations');
-  const ids = (rows as Array<{ id: string }>).map((row) => row.id);
-  return new Set(ids);
+async function getAppliedIds(pool: Pool): Promise<Set<string>> {
+  const { rows } = await pool.query<{ id: string }>('SELECT id FROM schema_migrations');
+  return new Set(rows.map((row) => row.id));
 }
 
 async function migrate(): Promise<void> {
-  const pool = mysql.createPool({
+  const pool = new Pool({
     host: env.db.host,
     port: env.db.port,
     user: env.db.user,
     password: env.db.password,
     database: env.db.database,
-    multipleStatements: true,
-    waitForConnections: true,
-    connectionLimit: 5,
-    queueLimit: 0,
+    max: 5,
   });
 
   try {
@@ -55,17 +52,17 @@ async function migrate(): Promise<void> {
 
     for (const m of pending) {
       console.log(`Aplicando migração ${m.id} - ${m.name}...`);
-      const conn = await pool.getConnection();
+      const client = await pool.connect();
       try {
-        await conn.beginTransaction();
-        await conn.query(m.sql);
-        await conn.query('INSERT INTO schema_migrations (id, name) VALUES (?, ?)', [m.id, m.name]);
-        await conn.commit();
+        await client.query('BEGIN');
+        await client.query(m.sql);
+        await client.query('INSERT INTO schema_migrations (id, name) VALUES ($1, $2)', [m.id, m.name]);
+        await client.query('COMMIT');
       } catch (err) {
-        await conn.rollback();
+        await client.query('ROLLBACK');
         throw err;
       } finally {
-        conn.release();
+        client.release();
       }
     }
 

@@ -1,8 +1,8 @@
 {
-  "name": "people-api",
+  "name": "flags-api",
   "version": "1.0.0",
   "private": true,
-  "description": "API REST de CRUD de people em Node.js + TypeScript com persistência em MySQL",
+  "description": "API REST de CRUD de feature flags em Node.js + TypeScript com persistência em PostgreSQL",
   "license": "MIT",
   "engines": {
     "node": "22.x"
@@ -16,11 +16,12 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
-    "mysql2": "^3.14.1"
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
