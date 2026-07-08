@@ -39,7 +39,7 @@ O repositório base contém uma API REST de feature flags em Node.js + TypeScrip
 
 A aplicação não possui Dockerfile, compose, dockerignore ou qualquer arquivo de containerização. Esse vácuo é proposital: é exatamente o que você vai construir.
 
-As migrações não rodam sozinhas. A subida de cada ambiente deve executá-las automaticamente, e a estratégia (script de inicialização, `command` no compose ou outro mecanismo) é decisão sua.
+As migrações não rodam sozinhas. A subida de cada ambiente, tanto de desenvolvimento quanto de produção, deve executá-las automaticamente, e a estratégia (script de inicialização, `command` no compose ou outro mecanismo) é decisão sua. O runner de migrações é compilado junto com a aplicação: após o build, ele está disponível em `dist/db/migrate.js`.
 
 ## Tecnologias obrigatórias
 
@@ -90,7 +90,7 @@ Estágio `production`:
 - `develop.watch` configurado com, no mínimo: ação `sync` para mudanças em `src/` e ação `rebuild` para mudanças no `package.json`
 - Serviço `adminer` disponível em `http://localhost:8081`, ativado somente pelo profile `tools`
 - Migrações aplicadas automaticamente na subida do ambiente
-- Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose up` deve deixar a API respondendo em `http://localhost:3000`, sem nenhum passo manual adicional
+- Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose up` deve deixar a API respondendo em `http://localhost:3000`, com `GET /flags` retornando 200, sem nenhum passo manual adicional
 
 ### 3. Imagem de produção no Docker Hub
 
@@ -98,7 +98,7 @@ Estágio `production`:
 - Manifest list contendo as plataformas `linux/amd64` e `linux/arm64`
 - Build com `--sbom=true` e `--provenance=true`, com as attestations publicadas junto da imagem
 - Publicada em repositório público no Docker Hub com uma tag semver (ex: `1.0.0`) e a tag `latest`, ambas apontando para o mesmo digest
-- Tamanho da imagem, reportado por `docker image ls` após o `docker pull` na arquitetura amd64, menor ou igual a XX MB
+- Tamanho da imagem, reportado por `docker image ls` após `docker pull --platform linux/amd64`, menor ou igual a XX MB
 
 ### 4. Análise de vulnerabilidades (Docker Scout)
 
@@ -112,8 +112,9 @@ Estágio `production`:
 - Todos os serviços com restart policy (`always` ou `unless-stopped`) e limites explícitos de CPU e memória
 - Nenhum bind mount de código-fonte; dados do PostgreSQL em volume nomeado
 - Mesmo esquema de variáveis de ambiente (`.env.example` → `.env`)
+- Migrações aplicadas automaticamente na subida do ambiente
 - Healthchecks ativos: `docker compose -f compose.prod.yaml ps` deve exibir os serviços como `healthy`
-- Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose -f compose.prod.yaml up -d` deve deixar a API respondendo em `http://localhost:3000`
+- Fluxo do avaliador: `cp .env.example .env` seguido de `docker compose -f compose.prod.yaml up -d` deve deixar a API respondendo em `http://localhost:3000`, com `GET /flags` retornando 200
 
 ### 6. README
 
@@ -141,7 +142,7 @@ Dockerfile e contexto de build
 
 Ambiente de desenvolvimento
 
-☐ `cp .env.example .env && docker compose up` deixa a API respondendo em `http://localhost:3000`, com migrações aplicadas, sem passos manuais adicionais
+☐ `cp .env.example .env && docker compose up` deixa a API respondendo em `http://localhost:3000` e `GET /flags` retorna 200 (migrações aplicadas), sem passos manuais adicionais
 ☐ `db` possui healthcheck e `app` depende dele com `condition: service_healthy`
 ☐ Com `docker compose watch` (ou `up --watch`), alteração em arquivo de `src/` é refletida sem rebuild e alteração no `package.json` dispara rebuild
 ☐ `docker compose --profile tools up -d` sobe o cliente de banco em `http://localhost:8081`
@@ -153,9 +154,9 @@ Imagem de produção e Docker Hub
 ☐ `docker buildx imagetools inspect` da imagem lista `linux/amd64` e `linux/arm64`
 ☐ `docker buildx imagetools inspect` exibe as attestations de SBOM e provenance
 ☐ A tag semver e a tag `latest` apontam para o mesmo digest
-☐ Após `docker pull`, `docker image ls` reporta tamanho menor ou igual a XX MB (amd64)
+☐ Após `docker pull --platform linux/amd64`, `docker image ls` reporta tamanho menor ou igual a XX MB
 ☐ `docker image inspect` mostra `User` não-root, `HEALTHCHECK` configurado e as 4 labels OCI exigidas
-☐ Um container da imagem responde ao `GET /health` e aparece como `healthy`
+☐ Com um banco acessível (ex: no ambiente de produção), o container fica `healthy` pelo `HEALTHCHECK` da própria imagem
 ☐ `docker stop` encerra o container em menos de 10 segundos, sem esperar o timeout do SIGKILL
 
 Docker Scout
@@ -169,7 +170,7 @@ Ambiente de produção
 ☐ `compose.prod.yaml` não contém instrução `build` e referencia a imagem do Docker Hub pela tag semver
 ☐ Todos os serviços têm restart policy e limites de CPU e memória
 ☐ Não há bind mount de código-fonte e os dados do PostgreSQL estão em volume nomeado
-☐ `cp .env.example .env && docker compose -f compose.prod.yaml up -d` deixa a API em `http://localhost:3000` e `ps` exibe os serviços como `healthy`
+☐ `cp .env.example .env && docker compose -f compose.prod.yaml up -d` deixa a API em `http://localhost:3000`, `GET /flags` retorna 200 e `ps` exibe os serviços como `healthy`
 
 README
 
@@ -181,7 +182,7 @@ README
 Consistência geral
 
 ☐ O código da aplicação (`src/`, `package.json`, `package-lock.json`, `tsconfig.json`, migrações) não foi alterado
-☐ Nenhuma credencial em texto plano em `Dockerfile`, nos arquivos compose ou em qualquer arquivo versionado
+☐ Nenhuma credencial hardcoded em `Dockerfile` ou nos arquivos compose (valores sempre vindos do `.env`); o único arquivo versionado com valores de credenciais é o `.env.example`, contendo exclusivamente credenciais de desenvolvimento local
 
 ## Estrutura obrigatória do entregável
 
@@ -229,7 +230,7 @@ https://github.com/devfullcycle/REPO-A-DEFINIR
 
 **7.** Rode o Scout contra a imagem publicada. Se houver CVE CRITICAL, ajuste a imagem base e republique. Salve o relatório em `reports/`.
 
-**8.** Monte o `compose.prod.yaml` consumindo a imagem publicada.
+**8.** Monte o `compose.prod.yaml` consumindo a imagem publicada, incluindo a aplicação automática das migrações.
 
 **9.** Escreva o README com as evidências e a seção de validação.
 
