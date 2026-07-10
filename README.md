@@ -213,7 +213,7 @@ Arquivos adicionais de containerização criados por você, como scripts de inic
 
 ## Repositório base
 
-https://github.com/devfullcycle/REPO-A-DEFINIR
+https://github.com/devfullcycle/fc4-desafio-docker-node-api
 
 ## Ordem de execução sugerida
 
