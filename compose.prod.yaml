@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+    networks:
+      - flags-net-prod
+
+  app:
+    image: clebejr/docker-to-prd:1.0.0
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    networks:
+      - flags-net-prod
+
+networks:
+  flags-net-prod:
+    name: flags-net-prod
+
+volumes:
+  db-data:

@@ -1,0 +1,86 @@
+
+
+## Overview
+
+                   │               Analyzed Image               
+───────────────────┼────────────────────────────────────────────
+ Target            │  clebejr/docker-to-prd:1.0.0               
+   digest          │  5a079d6329be                              
+   platform        │ linux/amd64                                
+   provenance      │ https://github.com/CleberJr9/docker-to-prd 
+                   │  https://github.com/CleberJr9/docker-to-prd/blob/f8f0290eeb023f23e99997e174b784b5c23e62a5  
+   vulnerabilities │    0C     7H     1M     0L     2?          
+   size            │ 58 MB                                      
+   packages        │ 102                                        
+                   │                                            
+ Base image        │  node:22.23.2-alpine                       
+                   │  c610fcdfb1d5                              
+
+
+## Packages and Vulnerabilities
+
+   0C     7H     1M     0L     2?  libssl3 3.5.7-r0
+pkg:apk/alpine/libssl3@3.5.7-r0?arch=x86_64&distro=alpine-3.24.1&upstream=openssl
+
+https://github.com/CleberJr9/docker-to-prd/blob/f8f0290eeb023f23e99997e174b784b5c23e62a5/Dockerfile#L7-L7
+FROM node:${NODE_VERSION}-alpine AS base
+
+    ✗ HIGH CVE-2026-63076
+      https://scout.docker.com/v/CVE-2026-63076?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ HIGH CVE-2026-63075
+      https://scout.docker.com/v/CVE-2026-63075?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ HIGH CVE-2026-63072
+      https://scout.docker.com/v/CVE-2026-63072?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ HIGH CVE-2026-54874
+      https://scout.docker.com/v/CVE-2026-54874?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ HIGH CVE-2026-18798
+      https://scout.docker.com/v/CVE-2026-18798?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ HIGH CVE-2026-14457
+      https://scout.docker.com/v/CVE-2026-14457?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ HIGH CVE-2026-14456
+      https://scout.docker.com/v/CVE-2026-14456?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ MEDIUM CVE-2026-63074
+      https://scout.docker.com/v/CVE-2026-63074?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ UNSPECIFIED CVE-2026-75803
+      https://scout.docker.com/v/CVE-2026-75803?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+    ✗ UNSPECIFIED CVE-2026-63073
+      https://scout.docker.com/v/CVE-2026-63073?s=alpine&n=openssl&ns=alpine&t=apk&osn=alpine&osv=3.24&vr=%3C3.5.8-r0
+      Affected range : <3.5.8-r0 
+      Fixed version  : 3.5.8-r0  
+    
+
+
+10 vulnerabilities found in 1 package
+  CRITICAL     0 
+  HIGH         7 
+  MEDIUM       1 
+  LOW          0 
+  UNSPECIFIED  2 
+
